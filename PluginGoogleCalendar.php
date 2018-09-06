@@ -5,18 +5,15 @@ Code resorce to call a Google calendar.
 </p>
 #code-php#
 include_once 'path_to_this...';
-
 $google = new PluginGoogleCalendar();
 $google->filename = $filename;
 $google->init();
-
 print_r($google->getAllDayEvents());
 print_r($google->raw_data);
 print_r($google->getMinutesPerMonth());
 print_r($google->getMinutesPerWeek());
 print_r($google->getMinutesPerWeekAndDay());
 print_r($google->calendar);
-
 #code#
  */
 class PluginGoogleCalendar{
@@ -210,12 +207,25 @@ class PluginGoogleCalendar{
     $this->calendar = array('calendar' => $calendar, 'event' => $event);
     return true;
   }
+  public function getCalendar(){
+    return $this->calendar['calendar'];
+  }
   public function getAllDayEvents(){
     $events = array();
     foreach ($this->calendar['event'] as $key => $value) {
       if(isset($value['DTSTART']) && isset($value['DTEND'])){
       }else if(isset($value['DTSTART;VALUE=DATE']) && isset($value['DTEND;VALUE=DATE'])){
         $events[] = array('start' => $value['DTSTART;VALUE=DATE'], 'end' => $value['DTEND;VALUE=DATE'], 'description' => $value['DESCRIPTION'], 'summary' => $value['SUMMARY']);
+      }
+    }
+    return $events;
+  }
+  public function getAllTimeEvents(){
+    $events = array();
+    foreach ($this->calendar['event'] as $key => $value) {
+      if(isset($value['DTSTART']) && isset($value['DTEND'])){
+        $events[] = array('start' => $value['DTSTART'], 'end' => $value['DTEND'], 'description' => $value['DESCRIPTION'], 'summary' => $value['SUMMARY']);
+      }else if(isset($value['DTSTART;VALUE=DATE']) && isset($value['DTEND;VALUE=DATE'])){
       }
     }
     return $events;
