@@ -1,115 +1,11 @@
 <?php
-/**
-<p>
-Code resorce to call a Google calendar.
-</p>
-#code-php#
-include_once 'path_to_this...';
-$google = new PluginGoogleCalendar();
-$google->filename = $filename;
-$google->init();
-print_r($google->getAllDayEvents());
-print_r($google->raw_data);
-print_r($google->getMinutesPerMonth());
-print_r($google->getMinutesPerWeek());
-print_r($google->getMinutesPerWeekAndDay());
-print_r($google->calendar);
-#code#
- */
 class PluginGoogleCalendar{
   public $filename = null;
   public $calendar = null;
   public $raw_data = null;
   public $file_get_contents = null;
   public $failure = true;
-  /**
-  <p>
-  Test Google Calendar plugin. Need widget amcharts/amcharts(include) to display data in a graph.
-  </p>
-  #code-yml#
-  type: widget
-  data:
-    plugin: 'google/calendar'
-    method: demo
-    data:
-      calendar: url_to_google_calendar
-  #code#
- */  
-  public function widget_demo($data){
-    $filename = wfRequest::get('filename');
-    if(!$filename){
-      $filename = wfArray::get($data, 'data/calendar');
-    }
-    if(!$filename){
-      return null;
-    }
-    $this->filename = $filename;
-    if(!$this->filename){return null;}
-    $this->init();
-    if($this->failure){
-      return null;
-    }
-    $lable = wfDocument::createHtmlElement('h1', wfArray::get($this->calendar, 'calendar/X-WR-CALNAME'));
-    wfDocument::renderElement(array($lable));
-    $graphs = array();
-    $graphs[] = array(
-      'title' => 'Day', 
-      'valueField' => 'hours', 
-      'balloonText' => '[[value]] hours, [[category]]', 
-      'lineColor' => 'gray', 
-      'type' => 'column', 
-      'fillAlphas' => '0.3'
-      );
-    $dataProvider = array();
-    $minutesperday = $this->getCompleteDateArray($this->getMinutesPerDay());
-    foreach ($minutesperday as $key => $value) {
-      $hours = number_format($value/60, 2);
-      $dataProvider[] = array('category' => $key, 'hours' => $hours);
-    }
-    $amcharts = array();
-    $amcharts[] = wfDocument::createWfElement('widget', array(
-      'plugin' => 'amcharts/amcharts', 
-      'method' => 'render', 
-      'data' => array(
-        'titles' => array(array('text' => 'Hour per day')),
-        'dataDateFormat' => "YYYY-MM-DD", 
-        'graphs' => $graphs, 
-        'dataProvider' => $dataProvider,
-        'categoryField' => 'category',
-        'categoryAxis' => array('parseDates' => true, 'dashLength' => 1, 'minorGridEnabled' => true)
-            )));
-    wfDocument::renderElement($amcharts);
-    $graphs = array();
-    $graphs[] = array(
-      'title' => 'Week', 
-      'valueField' => 'hours', 
-      'balloonText' => '[[value]] hours, [[category]]', 
-      'lineColor' => 'gray', 
-      'type' => 'column', 
-      'fillAlphas' => '0.3'
-      );
-    $dataProvider = array();
-    $minutesperweek = $this->getMinutesPerWeek();
-    foreach ($minutesperweek as $key => $value) {
-      $hours = number_format($value/60, 2);
-      $dataProvider[] = array('category' => $key, 'hours' => $hours);
-    }
-    $amcharts = array();
-    $amcharts[] = wfDocument::createWfElement('widget', array(
-      'plugin' => 'amcharts/amcharts', 
-      'method' => 'render', 
-      'data' => array(
-        'titles' => array(array('text' => 'Hour per week')),
-        'id' => 'google_calendar_week',
-        'dataDateFormat' => "YYYY-MM-DD", 
-        'graphs' => $graphs, 
-        'dataProvider' => $dataProvider,
-        'categoryField' => 'category',
-        'categoryAxiszzz' => array('parseDates' => true, 'dashLength' => 1, 'minorGridEnabled' => true)
-            )));
-    wfDocument::renderElement($amcharts);
-  }
-  private function getCompleteDateArray($dates_in_key){
+  public function getCompleteDateArray($dates_in_key){
     //Get start and end.
     $start = null;
     $end = null;
@@ -170,6 +66,8 @@ class PluginGoogleCalendar{
     $calendar = array();
     $vevent = false;
     $event = array();
+    $temp_calendar = null;
+    $temp_event = null;
     foreach ($raw_data as $key => $value) {
       //Calendar header.
       if(strstr($value, 'BEGIN:VEVENT') && sizeof($calendar) == 0 || strstr($value, 'END:VCALENDAR') && sizeof($calendar) == 0){
@@ -213,9 +111,9 @@ class PluginGoogleCalendar{
   public function getAllDayEvents(){
     $events = array();
     foreach ($this->calendar['event'] as $key => $value) {
-      if(isset($value['DTSTART']) && isset($value['DTEND'])){
-      }else if(isset($value['DTSTART;VALUE=DATE']) && isset($value['DTEND;VALUE=DATE'])){
-        $events[] = array('start' => $value['DTSTART;VALUE=DATE'], 'end' => $value['DTEND;VALUE=DATE'], 'description' => $value['DESCRIPTION'], 'summary' => $value['SUMMARY']);
+      $r = new PluginWfArray($value);
+      if($r->get('DTSTART;VALUE=DATE') && $r->get('DTEND;VALUE=DATE')){
+        $events[] = array('start' => trim($r->get('DTSTART;VALUE=DATE')), 'end' => trim($r->get('DTEND;VALUE=DATE')), 'description' => trim($r->get('DESCRIPTION')), 'summary' => trim($r->get('SUMMARY')));
       }
     }
     return $events;
@@ -223,9 +121,9 @@ class PluginGoogleCalendar{
   public function getAllTimeEvents(){
     $events = array();
     foreach ($this->calendar['event'] as $key => $value) {
-      if(isset($value['DTSTART']) && isset($value['DTEND'])){
-        $events[] = array('start' => $value['DTSTART'], 'end' => $value['DTEND'], 'description' => $value['DESCRIPTION'], 'summary' => $value['SUMMARY']);
-      }else if(isset($value['DTSTART;VALUE=DATE']) && isset($value['DTEND;VALUE=DATE'])){
+      $r = new PluginWfArray($value);
+      if($r->get('DTSTART') && $r->get('DTEND')){
+        $events[] = array('start' => trim($r->get('DTSTART')), 'end' => trim($r->get('DTEND')), 'description' => trim($r->get('DESCRIPTION')), 'summary' => trim($r->get('SUMMARY')));
       }
     }
     return $events;
@@ -315,7 +213,7 @@ class PluginGoogleCalendar{
     $return['weeks'] = $weeks;
     return $return;
   }
-  private function getStartAndEndDate($week, $year) {
+  public function getStartAndEndDate($week, $year) {
     // Adding leading zeros for weeks 1 - 9.
     $date_string = $year . 'W' . sprintf('%02d', $week);
     $return[] = date('Y-m-d', strtotime($date_string . '7'));
