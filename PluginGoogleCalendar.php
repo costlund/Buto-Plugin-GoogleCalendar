@@ -133,7 +133,7 @@ class PluginGoogleCalendar{
     return $dates;
   }
   public function init(){
-    if(strtolower(substr($this->filename, 0, 4)) != 'http'){
+    if(strtolower(wfPhpfunc::substr($this->filename, 0, 4)) != 'http'){
       return null;
     }
     try {
@@ -158,7 +158,7 @@ class PluginGoogleCalendar{
     $raw_data = array();
     $i = null;
     foreach ($temp as $key => $value) {
-      if(substr($value, 0, 1)==' '){
+      if(wfPhpfunc::substr($value, 0, 1)==' '){
         $raw_data[$i] = $raw_data[$i].$value;
       }else{
         $i = $key;
@@ -172,7 +172,7 @@ class PluginGoogleCalendar{
     $event = array();
     foreach ($raw_data as $key => $value) {
       //Calendar header.
-      if(strstr($value, 'BEGIN:VEVENT') && sizeof($calendar) == 0 || strstr($value, 'END:VCALENDAR') && sizeof($calendar) == 0){
+      if(wfPhpfunc::strstr($value, 'BEGIN:VEVENT') && sizeof($calendar) == 0 || wfPhpfunc::strstr($value, 'END:VCALENDAR') && sizeof($calendar) == 0){
         $vcalendar = false;
         $calendar = $temp_calendar;
       }
@@ -180,26 +180,26 @@ class PluginGoogleCalendar{
         $x = explode(":", $value);
         $temp_calendar[$x[0]] = $x[1];
       }
-      if(strstr($value, 'BEGIN:VCALENDAR')){
+      if(wfPhpfunc::strstr($value, 'BEGIN:VCALENDAR')){
         $vcalendar = true;
         $temp_calendar = array();
       }
       //Events.
-      if(strstr($value, 'END:VEVENT')){
+      if(wfPhpfunc::strstr($value, 'END:VEVENT')){
         $vevent = false;
         $event[] = $temp_event;
       }
       if($vevent){
-        $i = strstr($value, ':', true);
+        $i = wfPhpfunc::strstr($value, ':', true);
         $x[0] = $i;
-        $x[1] = substr($value, strlen($x[0])+1);
+        $x[1] = wfPhpfunc::substr($value, wfPhpfunc::strlen($x[0])+1);
         if(isset($x[1])){
           $temp_event[$x[0]] = $x[1];
         }else{
           $temp_event[$x[0]] = '';
         }
       }
-      if(strstr($value, 'BEGIN:VEVENT')){
+      if(wfPhpfunc::strstr($value, 'BEGIN:VEVENT')){
         $vevent = true;
         $temp_event = array();
       }
