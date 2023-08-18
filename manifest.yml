@@ -1,6 +1,27 @@
-version: .1.0
+version: 1.2.0
 history:
-  .1.0:
+  1.2.0:
     date: '2023-08-17'
     title: 'PHP 8.2'
     description: 'Changes according to PHP version 8.2.'
+  1.1.0:
+    date: '2023-06-13'
+    title: 'Clean up'
+    description: 'Cleaning up code. Add manifest and readme.'
+  1.0.0:
+    date: '2023-06-13'
+    title: 'First version'
+    description: 'First version. Manifest created.'
+plugin: {  }
+sys:
+  -
+    name: mercury
+    version:
+      - 2.90.0
+php:
+  version:
+    - 8.0.8
+author: null
+links: null
+description: ''
+third_part_software: null
